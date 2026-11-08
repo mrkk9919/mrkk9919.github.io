@@ -550,13 +550,25 @@
     if (changeAccountBtn) changeAccountBtn.focus();
   }
 
+  // 演示用的 Bakong 别名 → 收款人真实账号（页面上只展示账号，不展示 @wing 这类别名）
+  var RECIPIENT_ACCOUNTS = {
+    "wing_khqr@wing": "000030101150606",
+    "angkor.travel@acleda": "000889900112"
+  };
+
+  function displayRecipientAccount(account) {
+    var raw = String(account || "");
+    if (!raw) return "";
+    return RECIPIENT_ACCOUNTS[raw.toLowerCase()] || raw;
+  }
+
   function recipientAccountText(info) {
     var account = info && (
       info.merchantAccount || info.accountId || info.account || info.bakongAccountId || info.merchantId
     );
     if (account && typeof account === "object") account = account.id || account.accountId || "";
     if (!account && info && info.raw) account = bakongAccountFromQr(info.raw);
-    return account ? "Recipient account: " + String(account) : "Recipient account unavailable";
+    return account ? "Recipient account: " + displayRecipientAccount(account) : "Recipient account unavailable";
   }
 
   // 默认沿用第一个 USD 账户，同时保留所有账户供用户切换。
@@ -590,7 +602,7 @@
     var accountId = String(info.accountId || info.account || info.bakongAccountId || "");
     pfConfirmBank.textContent = recipientAccountText(info);
     var billAccount = String(info.merchantId || accountId || "");
-    if (pfBillBank) pfBillBank.textContent = billAccount ? "Account: " + billAccount : bank;
+    if (pfBillBank) pfBillBank.textContent = billAccount ? "Account: " + displayRecipientAccount(billAccount) : bank;
     var markLogo = bankLogoSrc(info);
     paintMark(pfConfirmToMark, markLogo, bank);
     paintMark(billAvatar, markLogo, bank);
@@ -874,14 +886,14 @@
     pfSuccessFrom.textContent = fromAccount.id + " | " + fromAccount.currency;
     pfSuccessMerchant.textContent = payment.merchant || "";
     var recipientAccount = merchantId || accountId;
-    pfSuccessBank.textContent = recipientAccount ? "Account: " + recipientAccount : "";
+    pfSuccessBank.textContent = recipientAccount ? "Account: " + displayRecipientAccount(recipientAccount) : "";
     var bankInfoForLogo = Object.assign({}, state.current || {}, { bank: recipientBank });
     paintMark(
       pfSuccessBankMark,
       recipientBank.logo || bankLogoSrc(bankInfoForLogo) || RECEIVER_DEFAULT_LOGO,
       bankShort
     );
-    pfSuccessBankShort.textContent = "ABA BANK";
+    pfSuccessBankShort.textContent = String(bankShort || bankName || "").toUpperCase();
     var displayRef = displayTransactionCode(payment.ref);
     pfSuccessRef.textContent = displayRef;
     var externalRef = payment.tx && (
