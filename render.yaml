@@ -1,16 +1,30 @@
 services:
   - type: web
-    name: mb-cambodia
+    name: mb-cambodia-api
     runtime: node
     plan: free
     region: singapore
     rootDir: server
     buildCommand: npm install
-    startCommand: node index.js
+    startCommand: npm start
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: "20"
+      - key: BAKONG_ENV
+        value: production
       - key: PAYMENT_MODE
-        value: demo
+        value: bakong
+      - key: BAKONG_EMAIL
+        sync: false
+      - key: BAKONG_TOKEN
+        sync: false
+      - key: BAKONG_ACCOUNT_ID
+        sync: false
+      - key: MERCHANT_NAME
+        value: SOKHA CHAN
+      - key: MERCHANT_CITY
+        value: Phnom Penh
+      - key: PUBLIC_BASE_URL
+        sync: false
