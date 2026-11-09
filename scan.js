@@ -281,6 +281,12 @@
       }
     }
 
+    // 回退：账号为纯数字（无 @bank 后缀）时也返回，保证收款账号能展示
+    for (var k = 0; k < keys.length; k++) {
+      var numeric = String(tlv(fields[keys[k]])["00"] || "").trim();
+      if (/^[0-9]{4,}$/.test(numeric)) return numeric;
+    }
+
     return "";
   }
 
