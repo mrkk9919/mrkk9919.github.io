@@ -25,8 +25,8 @@ function loadEnvFile() {
 loadEnvFile();
 
 const BAKONG_BASE = {
-  production: "https://api-bakong.nbc.org.kh",
-  sit: "https://sit-api-bakong.nbc.org.kh"
+  production: "https://api-bakong.nbc.gov.kh",
+  sit: "https://sit-api-bakong.nbc.gov.kh"
 };
 
 const env = (process.env.BAKONG_ENV || "production").toLowerCase();
