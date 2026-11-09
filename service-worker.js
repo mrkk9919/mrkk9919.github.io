@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_PREFIX = "mb-cambodia-pwa-";
-const CACHE_NAME = CACHE_PREFIX + "v20";
+const CACHE_NAME = CACHE_PREFIX + "v21";
 const APP_ROOT = new URL("./", self.location.href);
 const PRECACHE = [
   "index.html",
@@ -16,7 +16,7 @@ const PRECACHE = [
   "apple-touch-icon.png",
   "pwa-install.css",
   "pwa-install.js",
-  "assets/index-tGulQzRr.js",
+  "assets/index-tGulQzRr.js?v=2",
   "assets/index-BIeGMN93.css",
   "scan.css?v=5",
   "pay-flow.css?v=10",
@@ -31,12 +31,12 @@ const PRECACHE = [
   "jsqr.min.js",
   "qrcode.min.js",
   "kh-banks.js?v=1",
-  "scan.js?v=29",
+  "scan.js?v=30",
   "transfer-entry.js?v=1",
-  "account.js?v=14",
+  "account.js?v=15",
   "home-balance.js?v=2",
   "referral.js?v=1",
-  "notifications.js?v=2",
+  "notifications.js?v=3",
   "settings.js?v=1",
   "transfer.js?v=1",
   "international-transfer.js",

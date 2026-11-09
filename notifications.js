@@ -103,7 +103,7 @@
   function fallbackAccountId() {
     var selector = document.querySelector('[data-testid="button-account-selector"]');
     var match = selector && selector.textContent.match(/\b\d{6,}\b/);
-    return match ? match[0] : "000123456789";
+    return match ? match[0] : "2118997861";
   }
 
   function loadTransactions() {

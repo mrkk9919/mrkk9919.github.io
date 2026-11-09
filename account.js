@@ -24,9 +24,8 @@
 
   // shown when there is no backend (GitHub Pages) — same seed data as the server
   var DEMO_ACCOUNTS = [
-    { id: "000123456789", label: "USD · Current", currency: "USD", balance: 18265.5 },
-    { id: "000987654321", label: "KHR · Savings", currency: "KHR", balance: 4120000 },
-    { id: "000555000111", label: "USD · Savings", currency: "USD", balance: 320.75 }
+    { id: "2118997861", label: "USD · Current", currency: "USD", balance: 18265.5 },
+    { id: "1624454845", label: "KHR · Savings", currency: "KHR", balance: 4120000 }
   ];
   window.mbDemoAccounts = DEMO_ACCOUNTS;
 
@@ -288,8 +287,8 @@
     var sel = document.querySelector('[data-testid="button-account-selector"]');
     if (!sel) return;
 
-    var optId = a.id === "000123456789" ? "option-account-payment"
-      : (a.id === "000987654321" ? "option-account-savings" : "");
+    var optId = a.id === "2118997861" ? "option-account-payment"
+      : (a.id === "1624454845" ? "option-account-savings" : "");
 
     if (optId) {
       // let React own the state when its own menu knows this account
@@ -663,7 +662,7 @@
     }
     return [
       { direction: "in", title: "Received from ANGKOR TRAVEL", amount: 0.07 * m, currency: currency, createdAt: stamp("05/11/2026 20:52:00"), ref: "FT263140N5GL", externalRef: "052d185c", status: "success", counterpartyAccount: "000889900112", bank: "Wing Bank", note: "ANGKOR TRAVEL transfer" },
-      { direction: "in", title: "Received from SOKHA CHAN", amount: 0.01 * m, currency: currency, createdAt: stamp("05/11/2026 20:51:00"), ref: "FT263140N4KM", externalRef: "6b31f0a2", status: "success", counterpartyAccount: "000987654321", bank: "MB Bank Cambodia", note: "SOKHA CHAN transfer" },
+      { direction: "in", title: "Received from SOKHA CHAN", amount: 0.01 * m, currency: currency, createdAt: stamp("05/11/2026 20:51:00"), ref: "FT263140N4KM", externalRef: "6b31f0a2", status: "success", counterpartyAccount: "1624454845", bank: "MB Bank Cambodia", note: "SOKHA CHAN transfer" },
       { direction: "in", title: "Received from ANGKOR TRAVEL", amount: 0.01 * m, currency: currency, createdAt: stamp("31/10/2026 21:05:00"), ref: "FT262990F2QJ", externalRef: "93c47d1e", status: "success", counterpartyAccount: "000889900112", bank: "Wing Bank", note: "ANGKOR TRAVEL transfer" },
       { direction: "out", title: "Send to ANGKOR SUPPLY", amount: 3.93 * m, currency: currency, createdAt: stamp("30/10/2026 22:34:00"), ref: "FT262940A7VB", externalRef: "7fa2c918", status: "success", counterpartyAccount: "000778899001", bank: "ACLEDA Bank", note: "Payment to ANGKOR SUPPLY" },
       { direction: "out", title: "Send to ANGKOR SUPPLY", amount: 50 * m, currency: currency, createdAt: stamp("30/10/2026 20:56:00"), ref: "FT262940A6TD", externalRef: "24bd90f5", status: "success", counterpartyAccount: "000778899001", bank: "ACLEDA Bank", note: "Payment to ANGKOR SUPPLY" },

@@ -9,9 +9,8 @@ const FILE = path.join(config.storageDir, "state.json");
 
 const SEED = {
   accounts: [
-    { id: "000123456789", label: "USD · Current", currency: "USD", balance: 17600.89 },
-    { id: "000987654321", label: "KHR · Savings", currency: "KHR", balance: 4120000 },
-    { id: "000555000111", label: "USD · Savings", currency: "USD", balance: 320.75 }
+    { id: "2118997861", label: "USD · Current", currency: "USD", balance: 17600.89 },
+    { id: "1624454845", label: "KHR · Savings", currency: "KHR", balance: 4120000 }
   ],
   payments: {},
   transfers: []

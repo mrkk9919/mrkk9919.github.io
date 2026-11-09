@@ -451,7 +451,7 @@
     pfSuccessFrom.textContent = pfSumFrom.textContent;
   }
 
-  var STATIC_FALLBACK_ACCOUNT = { id: "000123456789", name: "SOKHA CHAN", currency: "USD", balance: 18265.5 };
+  var STATIC_FALLBACK_ACCOUNT = { id: "2118997861", name: "SOKHA CHAN", currency: "USD", balance: 18265.5 };
 
   function normalizePaymentAccounts(list) {
     return (list || []).filter(function (account) {
