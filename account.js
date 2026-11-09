@@ -127,7 +127,7 @@
       name.textContent = HOLDER;
       var num = document.createElement("p");
       num.className = "acct-number";
-      num.textContent = a.id;
+      num.textContent = a.currency + " \u00b7 " + a.id;
       var bal = document.createElement("p");
       bal.className = "acct-bal";
       bal.textContent = money(a.balance, a.currency) + " ";
