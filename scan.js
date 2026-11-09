@@ -620,7 +620,7 @@
     var prefill = info.amount === null || info.amount === undefined || info.amount === "" ? "" : String(info.amount);
     if (prefill && currency === "KHR") prefill = String(Math.round(Number(prefill)));
     pfAmount.value = prefill;
-    pfNote.value = (info.merchant || "") + " transfer";
+    pfNote.value = ((fromAccount && fromAccount.name) || "SOKHA CHAN") + " transfer";
     sizeAmountInput();
     refreshAmountState();
     pfConfirmBtn.disabled = false;
@@ -888,7 +888,7 @@
     var bankShort = bankLabel(bankName) || bankName;
     var accountId = (state.current && (state.current.accountId || state.current.account)) || "";
     var merchantId = (state.current && state.current.merchantId) || payment.merchantId || "";
-    var note = pfNote.value.trim() || (payment.merchant || "") + " transfer";
+    var note = pfNote.value.trim() || ((fromAccount && fromAccount.name) || "SOKHA CHAN") + " transfer";
     saveStaticDemoPayment(payment, note);
 
     pfSuccessAmount.textContent = currencyAmount(payment.amount, currency);

@@ -523,6 +523,8 @@
     var amount = money(t.amount, currency) + " " + currency;
     var party = transactionParty(t);
     var owner = (detailAccount && detailAccount.name) || HOLDER;
+    var noteText = t.note || stripDemo(t.title || "") || "No description";
+    if (!incoming && noteText === party + " transfer") noteText = owner + " transfer";
     var counterpartyAccount = counterpartyAccountValue(t.counterpartyAccount || t.merchantId, party);
     var bank = t.bank || "";
     var sample = Boolean(isSample || t.demo);
@@ -556,7 +558,7 @@
     txdNodes.ref.textContent = referenceCode(t.ref) || "Not available";
     txdNodes.externalRef.textContent = extRef || "Not available";
     txdNodes.copyRef.disabled = !extRef;
-    txdNodes.description.textContent = t.note || stripDemo(t.title || "") || "No description";
+    txdNodes.description.textContent = noteText;
     txdNodes.toast.textContent = "";
     if (detail) detail.setAttribute("aria-hidden", "true");
     transactionDetail.classList.add("open");
@@ -595,6 +597,8 @@
       var rawStatus = String(t.status || "").toLowerCase();
       var status = rawStatus === "pending" ? "Pending" :
         (rawStatus === "failed" || rawStatus === "expired" ? "Failed" : "Success");
+      var noteText = t.note || stripDemo(t.title || "") || "No description";
+      if (!incoming && noteText === party + " transfer") noteText = owner + " transfer";
       var text = [
         "MB Cambodia - Transaction receipt",
         "Amount: " + signed,
@@ -603,7 +607,7 @@
         "Status: " + status,
         "Time: " + formatTime(t.createdAt),
         "Transaction code: " + (referenceCode(t.ref) || "Not available"),
-        "Description: " + (t.note || stripDemo(t.title || "") || "No description")
+        "Description: " + noteText
       ].join("\n");
       function shared() { txdNodes.toast.textContent = "Receipt shared"; }
       function fallbackCopied() { txdNodes.toast.textContent = "Receipt copied to clipboard"; }
