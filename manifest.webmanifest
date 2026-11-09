@@ -9,8 +9,8 @@
   "display": "standalone",
   "display_override": ["standalone", "minimal-ui"],
   "orientation": "portrait-primary",
-  "background_color": "#1f37b7",
-  "theme_color": "#0877ef",
+  "background_color": "#141ed5",
+  "theme_color": "#141ed5",
   "categories": ["finance"],
   "prefer_related_applications": false,
   "icons": [
@@ -24,7 +24,13 @@
       "src": "./app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "./app-icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
     }
   ]
 }

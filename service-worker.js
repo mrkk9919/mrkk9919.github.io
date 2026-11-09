@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_PREFIX = "mb-cambodia-pwa-";
-const CACHE_NAME = CACHE_PREFIX + "v27";
+const CACHE_NAME = CACHE_PREFIX + "v28";
 const APP_ROOT = new URL("./", self.location.href);
 const PRECACHE = [
   "index.html",
@@ -13,6 +13,7 @@ const PRECACHE = [
   "favicon.svg",
   "app-icon-192.png",
   "app-icon-512.png",
+  "app-icon-maskable-512.png",
   "apple-touch-icon.png",
   "pwa-install.css",
   "pwa-install.js",
