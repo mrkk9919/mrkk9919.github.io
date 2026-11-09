@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_PREFIX = "mb-cambodia-pwa-";
-const CACHE_NAME = CACHE_PREFIX + "v32";
+const CACHE_NAME = CACHE_PREFIX + "v33";
 const APP_ROOT = new URL("./", self.location.href);
 const PRECACHE = [
   "index.html",
@@ -31,11 +31,11 @@ const PRECACHE = [
   "cash-to-atm.css",
   "jsqr.min.js",
   "qrcode.min.js",
-  "kh-banks.js?v=2",
+  "kh-banks.js?v=3",
   "lang.js?v=2",
   "bakong-service.js?v=1",
   "./assets/myqr-sokha-chan.png",
-  "scan.js?v=33",
+  "scan.js?v=34",
   "transfer-entry.js?v=1",
   "account.js?v=17",
   "home-balance.js?v=2",

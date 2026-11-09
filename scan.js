@@ -175,6 +175,7 @@
     acleda: "acleda.png", aclb: "acleda.png", acledabank: "acleda.png",
     aba: "aba-user-logo.jpg", ababank: "aba-user-logo.jpg", abaa: "aba-user-logo.jpg",
     wing: "wing.png", wingbank: "wing.png", pipay: "pipay.png",
+    truemoney: "truemoney.png",
     maybank: "maybank.png"
   };
   var RECEIVER_DEFAULT_LOGO = "./assets/banks/aba-user-logo.jpg";
@@ -970,7 +971,8 @@
     chipmong: ["Chip Mong Bank", "Chip Mong Commercial Bank"], firstbank: ["First Commercial Bank", "First Commercial Bank"],
     kbprasac: ["KB Prasac Bank", "KB Prasac Bank Plc."], devb: ["DEV Bank", "Bakong sandbox bank"],
     bakong: ["Bakong", "National Bank of Cambodia"],
-    pipay: ["PiPay", "PiPay"]
+    pipay: ["PiPay", "PiPay"],
+    truemoney: ["TrueMoney", "TrueMoney"]
   };
 
   // 柬埔寨银行目录（kh-banks.js 由 open-banking-tracker-data 生成）：补齐别名、正式名称和 logo

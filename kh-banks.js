@@ -607,6 +607,19 @@ window.MB_KH_BANKS = [
     "logo": "./assets/banks/kh/taiwan-cooperative-bank-phnom-penh-branch.png"
   },
   {
+    "id": "truemoney",
+    "name": "TrueMoney",
+    "short": "TrueMoney",
+    "bic": "",
+    "aliases": [
+      "truemoney",
+      "true money",
+      "true-money"
+    ],
+    "website": "https://truemoney.com.kh/",
+    "logo": "./assets/banks/truemoney.png"
+  },
+  {
     "id": "union-commercial-bank-plc",
     "name": "Union Commercial Bank Plc.",
     "short": "UCB",
