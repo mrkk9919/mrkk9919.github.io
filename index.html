@@ -886,6 +886,16 @@
         </nav>
         <div class="settings-toast" id="settings-toast" role="status" aria-live="polite"></div>
       </main>
+    <script>
+      (function () {
+        if (window.MB_API_BASE) return;
+        var host = location.hostname;
+        window.MB_API_BASE =
+          host === "localhost" || host === "127.0.0.1" || /\.onrender\.com$/.test(host)
+            ? "/api"
+            : "https://mb-cambodia-api.onrender.com/api";
+      })();
+    </script>
     <script src="./jsqr.min.js"></script>
     <script src="./qrcode.min.js"></script>
     <script src="./kh-banks.js?v=1"></script>

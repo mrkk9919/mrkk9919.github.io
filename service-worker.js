@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_PREFIX = "mb-cambodia-pwa-";
-const CACHE_NAME = CACHE_PREFIX + "v29";
+const CACHE_NAME = CACHE_PREFIX + "v30";
 const APP_ROOT = new URL("./", self.location.href);
 const PRECACHE = [
   "index.html",
