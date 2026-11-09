@@ -11,6 +11,10 @@
   );
   var languageNames = { en: "English", vi: "Tiếng Việt", km: "ភាសាខ្មែរ" };
   var selectedLanguage = "en";
+  try {
+    var savedLanguage = localStorage.getItem("mb_lang");
+    if (savedLanguage === "en" || savedLanguage === "vi" || savedLanguage === "km") selectedLanguage = savedLanguage;
+  } catch (e) {}
   var languageTrigger = null;
   var toastTimer = 0;
   var languageCloseTimer = 0;
@@ -80,6 +84,7 @@
     if (languageOption) {
       selectedLanguage = languageOption.getAttribute("data-language-option");
       syncLanguageOptions();
+      if (window.mbI18n && window.mbI18n.apply) window.mbI18n.apply(selectedLanguage);
       return;
     }
 

@@ -380,22 +380,13 @@
 
           <div class="myqr-khqr-card" id="myqr-khqr-card">
             <div class="myqr-khqr-band"><span class="myqr-khqr-wordmark">KHR<em>QR</em></span></div>
-            <p class="myqr-name" id="myqr-name">MB Bank Cambodia</p>
-            <p class="myqr-amount" id="myqr-amount">0</p>
+            <p class="myqr-name" id="myqr-name">SOKHA CHAN</p>
             <div class="myqr-dashed"></div>
             <div class="myqr-box">
-              <img id="myqr-img" alt="My KHR QR code" />
-              <div class="myqr-center-logo" aria-hidden="true">
-                <svg viewBox="0 0 64 64"><circle cx="32" cy="32" r="30" fill="#d91f2b"/><g fill="#fff"><path d="M32 16l3.6 7.3 8 1.2-5.8 5.6 1.4 8-7.2-3.8-7.2 3.8 1.4-8L20.4 24.5l8-1.2z"/></g></svg>
-              </div>
-              <p class="myqr-loading" id="myqr-loading">Generating…</p>
+              <img id="myqr-img" alt="My KHQR code" src="./assets/myqr-sokha-chan.png" />
+              <p class="myqr-loading" id="myqr-loading" hidden>Generating…</p>
             </div>
           </div>
-
-          <button class="myqr-set-amount" id="myqr-set-amount" type="button">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-            Set amount
-          </button>
 
           <div class="myqr-actions">
             <button class="myqr-action" id="myqr-share" type="button" aria-label="Share">
@@ -407,18 +398,6 @@
           </div>
           <p class="myqr-status" id="myqr-status" role="status" aria-live="polite"></p>
         </main>
-      </div>
-
-      <!-- set amount for my QR -->
-      <div class="myqr-amount-sheet" id="myqr-amount-sheet" aria-hidden="true">
-        <div class="myqr-amount-card" role="dialog" aria-modal="true" aria-label="Set amount">
-          <p class="myqr-amount-title" id="myqr-amount-title">Set amount</p>
-          <input class="myqr-amount-input" id="myqr-amount-input" type="text" inputmode="decimal" autocomplete="off" placeholder="0" aria-label="Amount" />
-          <div class="myqr-amount-row">
-            <button class="myqr-amount-btn cancel" id="myqr-amount-cancel" type="button">Cancel</button>
-            <button class="myqr-amount-btn confirm" id="myqr-amount-confirm" type="button">Confirm</button>
-          </div>
-        </div>
       </div>
 
 
@@ -910,13 +889,14 @@
     <script src="./jsqr.min.js"></script>
     <script src="./qrcode.min.js"></script>
     <script src="./kh-banks.js?v=1"></script>
-    <script src="./scan.js?v=30"></script>
+    <script src="./lang.js?v=2"></script>
+    <script src="./scan.js?v=31"></script>
     <script src="./transfer-entry.js?v=1"></script>
     <script src="./account.js?v=17"></script>
     <script src="./home-balance.js?v=2"></script>
     <script src="./referral.js?v=1"></script>
     <script src="./notifications.js?v=4"></script>
-    <script src="./settings.js?v=1"></script>
+    <script src="./settings.js?v=2"></script>
     <script src="./pwa-install.js"></script>
   </body>
 </html>

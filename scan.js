@@ -1448,7 +1448,8 @@
     return cfg;
   })();
 
-  var MYQR_HOLDER = khqrConfig.merchantName;
+  var MYQR_HOLDER = "SOKHA CHAN";
+  var MYQR_IMAGE = "./assets/myqr-sokha-chan.png";
 
   var myqrFromScanner = false;
   var myqrState = { accounts: [], accountId: null, currency: "KHR", amount: 0, req: 0 };
@@ -1629,59 +1630,15 @@
   function generateMyQr() {
     var acct = currentMyQrAccount();
     if (!acct) return;
-    var reqId = ++myqrState.req;
+    myqrState.req++;
     myqrState.currency = String(acct.currency || "KHR").toUpperCase();
-    paintMyQrAmount();
     if (myqrName) myqrName.textContent = MYQR_HOLDER;
-    myqrImg.removeAttribute("data-ready");
-    myqrImg.removeAttribute("src");
-    if (myqrLoading) myqrLoading.hidden = false;
-    myqrSetStatus("", "");
-
-    function finished() {
-      if (reqId !== myqrState.req) return;
-      if (myqrLoading) myqrLoading.hidden = true;
+    if (myqrImg) {
+      myqrImg.src = MYQR_IMAGE;
       myqrImg.setAttribute("data-ready", "1");
     }
-
-    function preview() {
-      var payload = buildKhqr(myqrState.currency, myqrState.amount);
-      if (!drawQr(payload)) {
-        myqrSetStatus("QR renderer failed to load.");
-        if (myqrLoading) myqrLoading.hidden = true;
-        return;
-      }
-      finished();
-      myqrSetStatus("KHQR ready · scan with any Bakong app", "note");
-    }
-
-    if (envMode === "demo-static") {
-      preview();
-      return;
-    }
-
-    apiFetch("/qr/create", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        amount: myqrState.amount || null,
-        currency: myqrState.currency,
-        accountId: acct.id
-      })
-    }).then(function (data) {
-      if (reqId !== myqrState.req) return;
-      if (!drawQr(data.qr)) {
-        myqrSetStatus("QR renderer failed to load.");
-        if (myqrLoading) myqrLoading.hidden = true;
-        return;
-      }
-      finished();
-      if (myqrName) myqrName.textContent = data.merchant || MYQR_HOLDER;
-      myqrSetStatus("");
-    }).catch(function () {
-      if (reqId !== myqrState.req) return;
-      preview();
-    });
+    if (myqrLoading) myqrLoading.hidden = true;
+    myqrSetStatus("", "");
   }
 
   function openQrAmount() {
@@ -1814,20 +1771,17 @@
         ctx.font = "700 36px -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
         ctx.fillText(MYQR_HOLDER, w / 2, cy + 236);
 
-        ctx.font = "800 46px -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
-        ctx.fillText(myqrAmountLabel(), w / 2, cy + 300);
-
         ctx.strokeStyle = "#c9d0dc";
         ctx.lineWidth = 2;
         ctx.setLineDash([12, 10]);
         ctx.beginPath();
-        ctx.moveTo(cx + 56, cy + 350);
-        ctx.lineTo(cx + cw - 56, cy + 350);
+        ctx.moveTo(cx + 56, cy + 300);
+        ctx.lineTo(cx + cw - 56, cy + 300);
         ctx.stroke();
         ctx.setLineDash([]);
 
         var qrSize = 420;
-        ctx.drawImage(img, (w - qrSize) / 2, cy + 400, qrSize, qrSize);
+        ctx.drawImage(img, (w - qrSize) / 2, cy + 340, qrSize, qrSize);
 
         ctx.fillStyle = "#6b7689";
         ctx.font = "500 26px -apple-system, 'Segoe UI', Roboto, Arial, sans-serif";
@@ -1856,8 +1810,7 @@
     buildQrCard().then(function (cv) {
       return canvasToBlob(cv).then(function (blob) {
         var acct = currentMyQrAccount() || {};
-        var name = "MB-KHR-QR-" + String(acct.id || "receive") +
-          (myqrState.amount ? "-" + String(myqrState.amount) : "") + ".png";
+        var name = "MB-QR-" + String(acct.id || "receive") + ".png";
         var url;
         var revoke = false;
         if (blob) {
@@ -1882,8 +1835,7 @@
 
   function shareMyQr() {
     var acct = currentMyQrAccount() || {};
-    var text = "My KHQR — " + MYQR_HOLDER + " · Account " + String(acct.id || "") +
-      (myqrState.amount ? " · " + myqrAmountLabel() + " " + myqrState.currency : "");
+    var text = "My KHQR — " + MYQR_HOLDER + " · Account " + String(acct.id || "");
     function copy() {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(function () {
