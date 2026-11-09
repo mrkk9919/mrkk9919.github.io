@@ -55,20 +55,81 @@ async function renewToken() {
  * responseCode === 0 且 data 非空 => 已支付；其余一律视为未支付。
  */
 async function checkByMd5(hash) {
-  let r = await call("/v1/check_transaction_by_md5", { md5: hash });
+  const r = await authed("/v1/check_transaction_by_md5", { md5: hash });
+  return transactionResult(r);
+}
 
+/** 用完整交易 hash 查询（Bakong 文档 6） */
+async function checkByHash(hash) {
+  const r = await authed("/v1/check_transaction_by_hash", { hash: hash });
+  return transactionResult(r);
+}
+
+/** 用 8 位短 hash + 金额币种查询（Bakong 文档 7） */
+async function checkByShortHash(hash, amount, currency) {
+  const r = await authed("/v1/check_transaction_by_short_hash", {
+    hash: hash,
+    amount: Number(amount),
+    currency: String(currency || "USD").toUpperCase()
+  });
+  return transactionResult(r);
+}
+
+/** 校验 Bakong 账户是否存在（文档 8）：responseCode 0 = 存在 */
+async function checkAccount(accountId) {
+  const r = await authed("/v1/check_bakong_account", { accountId: accountId });
+  return {
+    ok: Boolean(r.json && r.json.responseCode === 0),
+    exists: Boolean(r.json && r.json.responseCode === 0),
+    httpStatus: r.status,
+    errorCode: r.json ? r.json.errorCode : null,
+    message: (r.json && r.json.responseMessage) || "HTTP " + r.status
+  };
+}
+
+/** 带 token 的调用，遇到 401 自动续期后重试一次 */
+async function authed(pathname, body) {
+  let r = await call(pathname, body);
   if (r.status === 401) {
     await renewToken();
-    r = await call("/v1/check_transaction_by_md5", { md5: hash });
+    r = await call(pathname, body);
   }
+  return r;
+}
 
+function transactionResult(r) {
   if (r.json && r.json.responseCode === 0 && r.json.data && Object.keys(r.json.data).length) {
-    return { paid: true, tx: r.json.data };
+    return { found: true, paid: true, tx: r.json.data, httpStatus: r.status };
   }
   return {
+    found: false,
     paid: false,
+    httpStatus: r.status,
+    errorCode: r.json ? r.json.errorCode : null,
     reason: (r.json && r.json.responseMessage) || "HTTP " + r.status
   };
+}
+
+/** 申请 token：NBC 会向注册邮箱发送 20 位验证码（文档 1） */
+async function requestToken(input) {
+  const r = await call(
+    "/v1/request_token",
+    {
+      email: String(input.email || "").trim(),
+      organization: String(input.organization || "MB Cambodia").slice(0, 100),
+      project: String(input.project || "MB Cambodia App").slice(0, 100)
+    },
+    { auth: false }
+  );
+  return { ok: Boolean(r.json && r.json.responseCode === 0), httpStatus: r.status, response: r.json || r.text };
+}
+
+/** 用邮箱收到的验证码换取 access token（文档 2） */
+async function verifyCode(code) {
+  const r = await call("/v1/verify", { code: String(code || "").trim() }, { auth: false });
+  const newToken = r.json && r.json.data && r.json.data.token;
+  if (newToken) token = newToken;
+  return { ok: Boolean(newToken), token: newToken || null, httpStatus: r.status, response: r.json || r.text };
 }
 
 /** Bakong 账户域名 → 银行名（KHQR 报文里没有银行字段，只能按 @域名 反查） */
@@ -220,11 +281,36 @@ function info() {
     env: config.bakong.env,
     baseUrl: config.bakong.baseUrl,
     mode: config.paymentMode,
+    accountId: config.bakong.accountId || null,
     accountConfigured: Boolean(config.bakong.accountId),
     tokenConfigured: Boolean(token),
+    emailConfigured: Boolean(config.bakong.email),
     qrReady: config.qrReady,
-    ready: config.bakongReady
+    ready: Boolean(token && config.qrReady),
+    apis: [
+      "request_token",
+      "verify",
+      "renew_token",
+      "generate_deeplink_by_qr",
+      "check_transaction_by_md5",
+      "check_transaction_by_hash",
+      "check_transaction_by_short_hash",
+      "check_bakong_account"
+    ]
   };
 }
 
-module.exports = { md5, checkByMd5, decodeKhqr, createOwnQr, makeDeeplink, renewToken, info };
+module.exports = {
+  md5,
+  checkByMd5,
+  checkByHash,
+  checkByShortHash,
+  checkAccount,
+  requestToken,
+  verifyCode,
+  decodeKhqr,
+  createOwnQr,
+  makeDeeplink,
+  renewToken,
+  info
+};

@@ -25,7 +25,15 @@ const MIME = {
 };
 
 function send(res, status, body, headers) {
-  const h = Object.assign({ "Cache-Control": "no-store" }, headers || {});
+  const h = Object.assign(
+    {
+      "Cache-Control": "no-store",
+      "Access-Control-Allow-Origin": "*",
+      "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      "Access-Control-Allow-Headers": "Content-Type, Authorization"
+    },
+    headers || {}
+  );
   if (typeof body === "string" || Buffer.isBuffer(body)) {
     if (!h["Content-Type"]) h["Content-Type"] = "text/plain; charset=utf-8";
   } else {
@@ -285,6 +293,79 @@ async function handleApi(req, res, pathname, query) {
     return send(res, r.status, r.body);
   }
 
+  /* ---- Bakong Open API 支持服务 ---- */
+
+  if (req.method === "GET" && pathname === "/api/bakong/status") {
+    return send(res, 200, { ok: true, bakong: bakong.info() });
+  }
+
+  if (req.method === "POST" && pathname === "/api/bakong/token/request") {
+    const body = await readBody(req);
+    if (!body.email) return send(res, 400, { error: "缺少 email", code: "EMAIL_REQUIRED" });
+    const r = await bakong.requestToken(body);
+    return send(res, r.ok ? 200 : 502, r);
+  }
+
+  if (req.method === "POST" && pathname === "/api/bakong/token/verify") {
+    const body = await readBody(req);
+    if (!body.code) return send(res, 400, { error: "缺少 code", code: "CODE_REQUIRED" });
+    const r = await bakong.verifyCode(body.code);
+    return send(res, r.ok ? 200 : 502, r);
+  }
+
+  if (req.method === "POST" && pathname === "/api/bakong/token/renew") {
+    try {
+      const newToken = await bakong.renewToken();
+      return send(res, 200, { ok: true, tokenConfigured: Boolean(newToken), bakong: bakong.info() });
+    } catch (err) {
+      return send(res, 502, { error: String(err.message || err), code: "TOKEN_RENEW_FAILED" });
+    }
+  }
+
+  if (req.method === "POST" && pathname === "/api/bakong/check-account") {
+    const body = await readBody(req);
+    const accountId = String(body.accountId || "").trim();
+    if (!accountId) return send(res, 400, { error: "缺少 accountId", code: "ACCOUNT_REQUIRED" });
+    if (!config.bakong.token) {
+      return send(res, 503, { error: "BAKONG_TOKEN 未配置", code: "BAKONG_TOKEN_MISSING" });
+    }
+    try {
+      const r = await bakong.checkAccount(accountId);
+      return send(res, 200, { accountId, ...r });
+    } catch (err) {
+      return send(res, 502, { error: String(err.message || err), code: "BAKONG_REQUEST_FAILED" });
+    }
+  }
+
+  if (req.method === "POST" && pathname === "/api/bakong/transaction") {
+    const body = await readBody(req);
+    if (!config.bakong.token) {
+      return send(res, 503, { error: "BAKONG_TOKEN 未配置", code: "BAKONG_TOKEN_MISSING" });
+    }
+    try {
+      let r;
+      if (body.md5) r = await bakong.checkByMd5(String(body.md5));
+      else if (body.hash) r = await bakong.checkByHash(String(body.hash));
+      else if (body.shortHash) r = await bakong.checkByShortHash(body.shortHash, body.amount, body.currency);
+      else return send(res, 400, { error: "缺少 md5 / hash / shortHash", code: "QUERY_REQUIRED" });
+      return send(res, 200, { ok: r.found, status: r.paid ? "PAID" : "UNPAID", ...r });
+    } catch (err) {
+      return send(res, 502, { error: String(err.message || err), code: "BAKONG_REQUEST_FAILED" });
+    }
+  }
+
+  if (req.method === "POST" && pathname === "/api/bakong/deeplink") {
+    const body = await readBody(req);
+    const qr = String(body.qr || "").trim();
+    if (!qr) return send(res, 400, { error: "缺少 qr", code: "QR_REQUIRED" });
+    const deeplink = await bakong.makeDeeplink(qr);
+    return send(res, deeplink ? 200 : 502, {
+      ok: Boolean(deeplink),
+      deeplink,
+      error: deeplink ? null : "Bakong 未返回 deeplink"
+    });
+  }
+
   /* ---- 内部转账 ---- */
 
   if (req.method === "GET" && pathname === "/api/internal/accounts") {
@@ -397,6 +478,7 @@ const server = http.createServer((req, res) => {
   const pathname = parsed.pathname || "/";
 
   if (pathname.startsWith("/api/")) {
+    if (req.method === "OPTIONS") return send(res, 204, "");
     handleApi(req, res, pathname, parsed.query).catch((err) => {
       const status = /payload too large|invalid json/.test(String(err.message)) ? 400 : 500;
       send(res, status, { error: String(err.message || err) });
