@@ -263,6 +263,23 @@ async function handleApi(req, res, pathname, query) {
     const qr = String(body.qr || "");
     const decoded = qr ? bakong.decodeKhqr(qr) : null;
     if (!decoded) return send(res, 422, { error: "不是受支持的 KHQR 收款码", code: "INVALID_QR" });
+    let recipient = null;
+    if (config.bakong.token && decoded.bakongAccountId) {
+      try {
+        const r = await bakong.checkAccount(decoded.bakongAccountId);
+        recipient = {
+          exists: r.exists,
+          fullName: r.fullName,
+          accountStatus: r.accountStatus,
+          kycStatus: r.kycStatus,
+          canReceive: r.canReceive,
+          frozen: r.frozen,
+          message: r.message
+        };
+      } catch (err) {
+        recipient = { exists: null, message: String(err.message || err) };
+      }
+    }
     return send(res, 200, {
       merchant: decoded.merchant,
       city: decoded.city,
@@ -271,7 +288,8 @@ async function handleApi(req, res, pathname, query) {
       bank: decoded.bank,
       merchantAccount: decoded.bakongAccountId,
       merchantId: decoded.merchantId,
-      merchantType: decoded.merchantType
+      merchantType: decoded.merchantType,
+      recipient
     });
   }
 

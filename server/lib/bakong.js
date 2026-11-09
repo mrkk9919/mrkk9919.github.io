@@ -103,12 +103,18 @@ async function checkByShortHash(hash, amount, currency) {
 /** 校验 Bakong 账户是否存在（文档 8）：responseCode 0 = 存在 */
 async function checkAccount(accountId) {
   const r = await authed("/v1/check_bakong_account", { accountId: accountId });
+  const data = (r.json && r.json.data) || {};
   return {
     ok: Boolean(r.json && r.json.responseCode === 0),
     exists: Boolean(r.json && r.json.responseCode === 0),
     httpStatus: r.status,
     errorCode: r.json ? r.json.errorCode : null,
-    message: (r.json && r.json.responseMessage) || "HTTP " + r.status
+    message: (r.json && r.json.responseMessage) || "HTTP " + r.status,
+    fullName: data.fullName || "",
+    accountStatus: data.accountStatus || "",
+    kycStatus: data.kycStatus || "",
+    canReceive: data.canReceive === true,
+    frozen: data.frozen === 1 || data.frozen === true
   };
 }
 

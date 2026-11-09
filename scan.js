@@ -604,12 +604,19 @@
 
     // 付款金额页顶部名称固定展示为账户持有人
     pfMerchant.textContent = "SOKHA CHAN";
-    pfConfirmMerchant.textContent = info.merchant;
-    pfSuccessMerchant.textContent = info.merchant;
+    var verified = info.recipient && info.recipient.exists
+      ? " · Bakong verified" + (info.recipient.kycStatus ? " · " + info.recipient.kycStatus : "")
+      : "";
+    pfConfirmMerchant.textContent = (info.recipient && info.recipient.fullName) || info.merchant;
+    pfSuccessMerchant.textContent = (info.recipient && info.recipient.fullName) || info.merchant;
     var accountId = String(info.accountId || info.account || info.bakongAccountId || "");
-    pfConfirmBank.textContent = recipientAccountText(info);
+    pfConfirmBank.textContent = recipientAccountText(info) + verified;
     var billAccount = String(info.merchantId || accountId || "");
-    if (pfBillBank) pfBillBank.textContent = billAccount ? "Account: " + displayRecipientAccount(billAccount) : bank;
+    if (pfBillBank) {
+      pfBillBank.textContent = billAccount
+        ? "Account: " + displayRecipientAccount(billAccount) + verified
+        : bank + verified;
+    }
     var markLogo = bankLogoSrc(info);
     paintMark(pfConfirmToMark, markLogo, bank);
     paintMark(billAvatar, markLogo, bank);
@@ -1011,6 +1018,7 @@
         bank: data.bank,
         merchantId: data.merchantId || "",
         accountId: data.merchantAccount || info.accountId || "",
+        recipient: data.recipient || null,
         kind: info.kind,
         raw: info.raw
       });
