@@ -535,7 +535,7 @@
     txdNodes.status.dataset.state = status === "Success" ? "success" : (status === "Pending" ? "pending" : "failed");
     txdNodes.transferAmount.textContent = amount;
     txdNodes.time.textContent = formatTime(t.createdAt);
-    txdNodes.ref.textContent = t.ref || "Not available";
+    txdNodes.ref.textContent = referenceCode(t.ref) || "Not available";
     txdNodes.externalRef.textContent = referenceCode(t.externalRef) || "Not available";
     txdNodes.copyRef.disabled = !referenceCode(t.externalRef);
     txdNodes.description.textContent = t.note || stripDemo(t.title || "") || "No description";
@@ -584,7 +584,7 @@
         "To: " + (incoming ? owner : party),
         "Status: " + status,
         "Time: " + formatTime(t.createdAt),
-        "Transaction code: " + (t.ref || "Not available"),
+        "Transaction code: " + (referenceCode(t.ref) || "Not available"),
         "Description: " + (t.note || stripDemo(t.title || "") || "No description")
       ].join("\n");
       function shared() { txdNodes.toast.textContent = "Receipt shared"; }
@@ -715,7 +715,7 @@
       if (t.ref) {
         var ref = document.createElement("p");
         ref.className = "acd-row-ref";
-        ref.textContent = "Transaction code: " + t.ref;
+        ref.textContent = "Transaction code: " + (referenceCode(t.ref) || t.ref);
         main.appendChild(ref);
       }
 
