@@ -681,6 +681,51 @@
     }
   }
 
+  // Single source of truth for "the transaction records of this account":
+  // server activity first, then locally recorded demo payments, then built-in samples.
+  function activityFor(a) {
+    return fetch("/api/internal/accounts/" + encodeURIComponent(a.id) + "/activity", { cache: "no-store" })
+      .then(function (res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function (data) {
+        var items = (data && data.activity) || [];
+        var account = (data && data.account) || a;
+        if (items.length) return { account: account, items: items, sample: false };
+        var localItems = demoPaymentActivity(a.id);
+        if (localItems.length) return { account: account, items: localItems, sample: false };
+        return { account: account, items: sampleActivity(a.currency), sample: true };
+      })
+      .catch(function () {
+        var localItems = demoPaymentActivity(a.id);
+        if (localItems.length) return { account: a, items: localItems, sample: false };
+        return { account: a, items: sampleActivity(a.currency), sample: true };
+      });
+  }
+
+  function openTransactionByRef(accountId, ref) {
+    var accounts = (currentAccounts && currentAccounts.length ? currentAccounts : DEMO_ACCOUNTS) || [];
+    var account = null;
+    for (var i = 0; i < accounts.length; i++) {
+      if (String(accounts[i].id) === String(accountId)) { account = accounts[i]; break; }
+    }
+    if (!account) account = accounts[0];
+    if (!account || !acdList) return false;
+    openDetail(account);
+    var tries = 0;
+    function seek() {
+      var row = null;
+      for (var j = 0; j < acdList.children.length; j++) {
+        if (acdList.children[j].getAttribute("data-ref") === String(ref)) { row = acdList.children[j]; break; }
+      }
+      if (row) { row.click(); return; }
+      if (++tries < 20) window.setTimeout(seek, 120);
+    }
+    window.setTimeout(seek, 160);
+    return true;
+  }
+
   function renderActivity(items, isSample) {
     acdList.innerHTML = "";
     if (!items.length) {
@@ -738,6 +783,7 @@
         ref.className = "acd-row-ref";
         ref.textContent = "Transaction code: " + (referenceCode(t.ref) || t.ref);
         main.appendChild(ref);
+        li.setAttribute("data-ref", String(t.ref));
       }
 
       var amt = document.createElement("span");
@@ -768,27 +814,13 @@
   function loadActivity(a) {
     renderActivity([], false);
     acdEmpty.hidden = true;
-    fetch("/api/internal/accounts/" + encodeURIComponent(a.id) + "/activity", { cache: "no-store" })
-      .then(function (res) {
-        if (!res.ok) throw new Error("HTTP " + res.status);
-        return res.json();
-      })
-      .then(function (data) {
-        var items = (data && data.activity) || [];
-        if (data && data.account) {
-          detailAccount = data.account;
-          renderDetailHero(data.account);
-        }
-        var localItems = demoPaymentActivity(a.id);
-        if (items.length) renderActivity(items, false);
-        else if (localItems.length) renderActivity(localItems, false);
-        else renderActivity(sampleActivity(a.currency), true);
-      })
-      .catch(function () {
-        var localItems = demoPaymentActivity(a.id);
-        if (localItems.length) renderActivity(localItems, false);
-        else renderActivity(sampleActivity(a.currency), true);
-      });
+    activityFor(a).then(function (result) {
+      if (result.account) {
+        detailAccount = result.account;
+        renderDetailHero(result.account);
+      }
+      renderActivity(result.items, result.sample);
+    });
   }
 
   function openDetail(a) {
@@ -858,5 +890,11 @@
   var acdExport = document.getElementById("acd-export");
   if (acdExport) acdExport.addEventListener("click", function () { acdShowToast("Statement export is a demo feature"); });
 
-  window.mbAccountPage = { open: openPage, close: closePage, detail: openDetail };
+  window.mbAccountPage = {
+    open: openPage,
+    close: closePage,
+    detail: openDetail,
+    activity: activityFor,
+    openTransaction: openTransactionByRef
+  };
 })();

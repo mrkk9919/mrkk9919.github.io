@@ -1,7 +1,7 @@
 "use strict";
 
 const CACHE_PREFIX = "mb-cambodia-pwa-";
-const CACHE_NAME = CACHE_PREFIX + "v22";
+const CACHE_NAME = CACHE_PREFIX + "v23";
 const APP_ROOT = new URL("./", self.location.href);
 const PRECACHE = [
   "index.html",
@@ -22,7 +22,7 @@ const PRECACHE = [
   "pay-flow.css?v=10",
   "account.css?v=7",
   "referral.css?v=1",
-  "notifications.css?v=2",
+  "notifications.css?v=3",
   "settings.css?v=1",
   "transfer.css?v=1",
   "international-transfer.css",
@@ -33,10 +33,10 @@ const PRECACHE = [
   "kh-banks.js?v=1",
   "scan.js?v=30",
   "transfer-entry.js?v=1",
-  "account.js?v=16",
+  "account.js?v=17",
   "home-balance.js?v=2",
   "referral.js?v=1",
-  "notifications.js?v=3",
+  "notifications.js?v=4",
   "settings.js?v=1",
   "transfer.js?v=1",
   "international-transfer.js",

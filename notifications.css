@@ -116,6 +116,18 @@ body.notification-open .bottom-nav { visibility: hidden; }
 .notification-card time { color: #858b94; font-size: 13px; font-variant-numeric: tabular-nums; }
 .notification-card-km h2 { line-height: 1.55; }
 .notification-card-km p { color: #555b66; line-height: 1.6; }
+.notice-alert-list { display: grid; gap: 14px; }
+.notice-alert-list[hidden] { display: none; }
+.notification-alert {
+  cursor: pointer;
+  border-left: 4px solid #0a66e8;
+  transition: transform 140ms ease, box-shadow 140ms ease;
+}
+.notification-alert:active { transform: scale(0.99); box-shadow: 0 2px 10px rgba(23,45,78,.10); }
+.notification-alert p { margin-bottom: 4px; }
+.notification-alert p strong { font-weight: 650; }
+.notification-alert .transaction-out { color: #e22424; }
+.notification-alert .transaction-in { color: #18a456; }
 
 .notification-day { margin: 0 0 -2px; color: #111820; font-size: 19px; font-weight: 500; }
 .notification-empty { margin: 36px 8px; color: #838b97; font-size: 14px; text-align: center; }

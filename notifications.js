@@ -10,6 +10,7 @@
   var transactionTab = document.getElementById("notice-tab-transaction");
   var transactionList = document.getElementById("notice-transaction-list");
   var transactionEmpty = document.getElementById("notice-transaction-empty");
+  var alertList = document.getElementById("notice-alert-list");
   var transactionRequest = 0;
 
   function setTab(name) {
@@ -106,42 +107,108 @@
     return match ? match[0] : "2118997861";
   }
 
+  function primaryAccount() {
+    var demo = (window.mbDemoAccounts || []).slice();
+    for (var i = 0; i < demo.length; i++) {
+      if (demo[i] && demo[i].currency === "USD") return demo[i];
+    }
+    return demo[0] || null;
+  }
+
+  function sortNewest(items) {
+    return items.slice().sort(function (a, b) {
+      return (Number(b.createdAt) || 0) - (Number(a.createdAt) || 0);
+    });
+  }
+
+  function alertTitle(item) {
+    var title = String(item.title || "").replace(/^Demo\s*·\s*/i, "");
+    if (title) return title;
+    return item.direction === "out" ? "Money sent" : "Money received";
+  }
+
+  function renderAlerts(items, account) {
+    if (!alertList) return;
+    alertList.innerHTML = "";
+    if (!items.length) {
+      alertList.hidden = true;
+      return;
+    }
+    alertList.hidden = false;
+    var heading = document.createElement("h2");
+    heading.className = "notification-day";
+    heading.textContent = "Latest transactions";
+    alertList.appendChild(heading);
+
+    sortNewest(items).slice(0, 10).forEach(function (item) {
+      var card = document.createElement("article");
+      card.className = "notification-card notification-alert";
+      card.setAttribute("role", "button");
+      card.setAttribute("tabindex", "0");
+      card.setAttribute("data-ref", item.ref || "");
+      card.setAttribute("data-account", item.accountId || (account && account.id) || "");
+
+      var head = document.createElement("h2");
+      var icon = document.createElement("span");
+      icon.setAttribute("aria-hidden", "true");
+      icon.textContent = "\uD83D\uDD14";
+      head.appendChild(icon);
+      head.appendChild(document.createTextNode(alertTitle(item)));
+      card.appendChild(head);
+
+      var meta = document.createElement("p");
+      var outgoing = item.direction === "out";
+      var amount = money(item.amount, item.currency || (account && account.currency) || "USD");
+      var amountEl = document.createElement("strong");
+      amountEl.className = outgoing ? "transaction-out" : "transaction-in";
+      amountEl.textContent = (outgoing ? "-" : "+") + amount;
+      meta.appendChild(amountEl);
+      var accountId = item.accountId || (account && account.id) || "";
+      meta.appendChild(document.createTextNode(" · " + (accountId ? "Account " + accountId + " · " : "") + dateParts(item.createdAt).time));
+      card.appendChild(meta);
+
+      if (item.ref) {
+        var refLine = document.createElement("p");
+        var refStrong = document.createElement("strong");
+        refStrong.textContent = "Transaction code: " + item.ref;
+        refLine.appendChild(refStrong);
+        card.appendChild(refLine);
+      }
+      alertList.appendChild(card);
+    });
+  }
+
   function loadTransactions() {
     var request = ++transactionRequest;
     transactionList.innerHTML = "";
     transactionEmpty.textContent = "Loading transactions...";
     transactionEmpty.hidden = false;
 
-    fetch("/api/internal/accounts", { headers: { Accept: "application/json" }, cache: "no-store" })
-      .then(function (response) {
-        if (!response.ok) throw new Error("Account request failed");
-        return response.json();
-      })
-      .then(function (data) {
-        var accounts = (data && data.accounts) || [];
-        var account = accounts.filter(function (item) { return item.currency === "USD"; })[0] || accounts[0] || null;
-        if (!account) throw new Error("No account available");
-        return fetch("/api/internal/accounts/" + encodeURIComponent(account.id) + "/activity", { cache: "no-store" })
-          .then(function (response) {
-            if (!response.ok) throw new Error("Activity request failed");
-            return response.json();
-          })
-          .then(function (activity) {
-            if (request !== transactionRequest) return;
-            var items = (activity && activity.activity) || [];
-            transactionEmpty.textContent = "No transaction records yet.";
-            if (items.length) renderTransactions(items, activity.account);
-            else {
-              var localItems = readLocalTransactions(account.id);
-              renderTransactions(localItems, account);
-            }
-          });
-      })
-      .catch(function () {
-        if (request !== transactionRequest) return;
-        transactionEmpty.textContent = "No transaction records yet.";
-        renderTransactions(readLocalTransactions(fallbackAccountId()), null);
+    var account = primaryAccount();
+    var feed;
+    if (account && window.mbAccountPage && window.mbAccountPage.activity) {
+      feed = window.mbAccountPage.activity(account);
+    } else {
+      feed = Promise.resolve({
+        account: account,
+        items: readLocalTransactions((account && account.id) || fallbackAccountId())
       });
+    }
+
+    feed.then(function (result) {
+      if (request !== transactionRequest) return;
+      var items = (result && result.items) || [];
+      var resultAccount = (result && result.account) || account;
+      transactionEmpty.textContent = "No transaction records yet.";
+      transactionEmpty.hidden = items.length > 0;
+      renderTransactions(items, resultAccount);
+      renderAlerts(items, resultAccount);
+    }).catch(function () {
+      if (request !== transactionRequest) return;
+      transactionEmpty.textContent = "No transaction records yet.";
+      renderTransactions([], account);
+      renderAlerts([], account);
+    });
   }
 
   function openNotifications() {
@@ -151,6 +218,7 @@
     document.body.classList.add("notification-open");
     document.documentElement.style.overflow = "hidden";
     setTab("general");
+    loadTransactions();
   }
 
   function closeNotifications() {
@@ -161,6 +229,23 @@
   }
 
   page.addEventListener("click", function (event) {
+    var alert = event.target.closest(".notification-alert");
+    if (alert) {
+      var ref = alert.getAttribute("data-ref");
+      var accountId = alert.getAttribute("data-account");
+      closeNotifications();
+      if (ref && window.mbAccountPage && window.mbAccountPage.openTransaction) {
+        window.setTimeout(function () {
+          window.mbAccountPage.openTransaction(accountId, ref);
+        }, 80);
+      } else if (accountId && window.mbAccountPage && window.mbAccountPage.open) {
+        window.setTimeout(function () {
+          window.mbAccountPage.open();
+        }, 80);
+      }
+      return;
+    }
+
     var tab = event.target.closest("[data-notice-tab]");
     if (tab) {
       setTab(tab.getAttribute("data-notice-tab"));
@@ -206,7 +291,7 @@
     if (event.key === "Escape" && page.classList.contains("open")) closeNotifications();
   });
   document.addEventListener("mb:payment-recorded", function () {
-    if (page.classList.contains("open") && !transactionPanel.hidden) loadTransactions();
+    if (page.classList.contains("open")) loadTransactions();
   });
 
   window.mbNotifications = { open: openNotifications, close: closeNotifications };
