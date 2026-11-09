@@ -25,13 +25,27 @@ async function call(pathname, body, options) {
   const opts = options || {};
   const headers = { "Content-Type": "application/json", Accept: "application/json" };
   if (opts.auth !== false) headers.Authorization = "Bearer " + (token || "");
-  const res = await fetch(config.bakong.baseUrl + pathname, {
-    method: "POST",
-    headers,
-    body: JSON.stringify(body || {}),
-    signal: AbortSignal.timeout(20000),
-    ...(proxyDispatcher ? { dispatcher: proxyDispatcher } : {})
-  });
+  let res;
+  try {
+    res = await fetch(config.bakong.baseUrl + pathname, {
+      method: "POST",
+      headers,
+      body: JSON.stringify(body || {}),
+      signal: AbortSignal.timeout(20000),
+      ...(proxyDispatcher ? { dispatcher: proxyDispatcher } : {})
+    });
+  } catch (err) {
+    const cause = err && err.cause;
+    console.error(
+      "[bakong] fetch failed:",
+      err && err.message,
+      "| cause:",
+      cause && (cause.code || cause.message),
+      "| proxy:",
+      config.bakong.proxy ? "on" : "off"
+    );
+    throw err;
+  }
   const text = await res.text();
   let json = null;
   try {
