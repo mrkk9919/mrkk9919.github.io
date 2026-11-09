@@ -401,6 +401,24 @@
       .replace(/^(Received from|Send to|KHQR payment to)\s+/i, "") || "Account holder";
   }
 
+  // 收款方账号：Bakong 别名换成真实账号；历史演示记录没有存账号时按收款人兜底
+  var COUNTERPARTY_ALIASES = {
+    "wing_khqr@wing": "000030101150606",
+    "angkor.travel@acleda": "000889900112"
+  };
+  var COUNTERPARTY_NAMES = {
+    "yukheang soeu": "000030101150606"
+  };
+
+  function counterpartyAccountValue(id, party) {
+    var raw = String(id || "");
+    if (raw) {
+      var alias = COUNTERPARTY_ALIASES[raw.toLowerCase()];
+      return alias || raw;
+    }
+    return COUNTERPARTY_NAMES[String(party || "").toLowerCase()] || "";
+  }
+
   function partyAccountText(id, bank) {
     var value = id ? String(id) : "";
     if (bank) value += (value ? " - " : "") + bank;
@@ -492,7 +510,7 @@
     var amount = money(t.amount, currency) + " " + currency;
     var party = transactionParty(t);
     var owner = (detailAccount && detailAccount.name) || HOLDER;
-    var counterpartyAccount = t.counterpartyAccount || t.merchantId || "";
+    var counterpartyAccount = counterpartyAccountValue(t.counterpartyAccount || t.merchantId, party);
     var bank = t.bank || "";
     var sample = Boolean(isSample || t.demo);
     var rawStatus = String(t.status || "").toLowerCase();
@@ -681,10 +699,11 @@
       time.textContent = formatTime(t.createdAt);
       main.appendChild(title);
       main.appendChild(time);
-      if (t.counterpartyAccount) {
+      var rowAccount = counterpartyAccountValue(t.counterpartyAccount || t.merchantId, transactionParty(t));
+      if (rowAccount) {
         var acct = document.createElement("p");
         acct.className = "acd-row-acct";
-        acct.textContent = t.counterpartyAccount + (t.bank ? " · " + t.bank : "");
+        acct.textContent = rowAccount + (t.bank ? " · " + t.bank : "");
         main.appendChild(acct);
       }
       if (t.note) {

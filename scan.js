@@ -859,6 +859,10 @@
       externalRef: "",
       note: note,
       merchantId: (state.current && state.current.merchantId) || "",
+      counterpartyName: payment.merchant || (state.current && state.current.merchant) || "",
+      counterpartyAccount: displayRecipientAccount(
+        (state.current && (state.current.merchantId || state.current.accountId || state.current.account)) || ""
+      ),
       bank: (payment.recipientBank && payment.recipientBank.name) ||
         (state.current && state.current.bank && state.current.bank.name) || "",
       accountId: fromAccount.id,
