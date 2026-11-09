@@ -863,7 +863,7 @@
       currency: fromAccount.currency,
       createdAt: Date.now(),
       ref: payment.ref,
-      externalRef: "",
+      externalRef: Math.random().toString(16).slice(2, 10),
       note: note,
       merchantId: (state.current && state.current.merchantId) || "",
       counterpartyName: payment.merchant || (state.current && state.current.merchant) || "",

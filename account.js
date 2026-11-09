@@ -46,6 +46,19 @@
     return String(ref == null ? "" : ref).replace(/^(?:DEMO-|demo_)/i, "");
   }
 
+  // 演示交易没有后端返回的 External Txn Ref 时，按交易号生成一个稳定的 8 位十六进制参考号
+  function demoExternalRef(seed) {
+    var text = String(seed || "MB");
+    var h1 = 0x811c9dc5;
+    var h2 = 0x27220a95;
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
+      h1 = ((h1 ^ code) * 0x01000193) >>> 0;
+      h2 = ((h2 + code * 31) * 0x85ebca6b) >>> 0;
+    }
+    return (h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0")).slice(0, 8);
+  }
+
   function showToast(text) {
     if (!toast) return;
     toast.textContent = text;
@@ -513,6 +526,11 @@
     var counterpartyAccount = counterpartyAccountValue(t.counterpartyAccount || t.merchantId, party);
     var bank = t.bank || "";
     var sample = Boolean(isSample || t.demo);
+    var extRef = referenceCode(t.externalRef);
+    if (!extRef && sample) {
+      extRef = demoExternalRef(t.ref || t.title);
+      t.externalRef = extRef;
+    }
     var rawStatus = String(t.status || "").toLowerCase();
     var status = rawStatus === "pending" ? "Pending" :
       (rawStatus === "failed" || rawStatus === "expired" ? "Failed" : "Success");
@@ -536,8 +554,8 @@
     txdNodes.transferAmount.textContent = amount;
     txdNodes.time.textContent = formatTime(t.createdAt);
     txdNodes.ref.textContent = referenceCode(t.ref) || "Not available";
-    txdNodes.externalRef.textContent = referenceCode(t.externalRef) || "Not available";
-    txdNodes.copyRef.disabled = !referenceCode(t.externalRef);
+    txdNodes.externalRef.textContent = extRef || "Not available";
+    txdNodes.copyRef.disabled = !extRef;
     txdNodes.description.textContent = t.note || stripDemo(t.title || "") || "No description";
     txdNodes.toast.textContent = "";
     if (detail) detail.setAttribute("aria-hidden", "true");
