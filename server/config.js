@@ -43,7 +43,8 @@ const config = {
     merchantName: process.env.MERCHANT_NAME || "",
     merchantCity: process.env.MERCHANT_CITY || "Phnom Penh",
     merchantId: process.env.MERCHANT_ID || "",
-    acquiringBank: process.env.ACQUIRING_BANK || ""
+    acquiringBank: process.env.ACQUIRING_BANK || "",
+    proxy: process.env.BAKONG_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || ""
   },
   paymentMode: (process.env.PAYMENT_MODE || (bakongToken ? "bakong" : "demo")).toLowerCase(),
   paymentTimeout: Number(process.env.PAYMENT_TIMEOUT || 180),

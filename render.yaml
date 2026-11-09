@@ -22,6 +22,8 @@ services:
         sync: false
       - key: BAKONG_ACCOUNT_ID
         sync: false
+      - key: BAKONG_PROXY
+        sync: false
       - key: MERCHANT_NAME
         value: SOKHA CHAN
       - key: MERCHANT_CITY

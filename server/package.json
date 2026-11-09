@@ -13,7 +13,8 @@
   },
   "license": "UNLICENSED",
   "dependencies": {
-    "bakong-khqr": "^1.0.20"
+    "bakong-khqr": "^1.0.20",
+    "undici": "^6.21.0"
   },
   "overrides": {
     "axios": "^1.21.0"

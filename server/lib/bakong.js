@@ -7,6 +7,16 @@ const { BakongKHQR, khqrData, MerchantInfo, IndividualInfo } = require("bakong-k
 let token = config.bakong.token;
 let renewing = null;
 
+let proxyDispatcher = null;
+if (config.bakong.proxy) {
+  try {
+    const { ProxyAgent } = require("undici");
+    proxyDispatcher = new ProxyAgent(config.bakong.proxy);
+  } catch (err) {
+    console.error("Bakong proxy init failed:", err.message);
+  }
+}
+
 function md5(text) {
   return crypto.createHash("md5").update(text).digest("hex");
 }
@@ -19,7 +29,8 @@ async function call(pathname, body, options) {
     method: "POST",
     headers,
     body: JSON.stringify(body || {}),
-    signal: AbortSignal.timeout(20000)
+    signal: AbortSignal.timeout(20000),
+    ...(proxyDispatcher ? { dispatcher: proxyDispatcher } : {})
   });
   const text = await res.text();
   let json = null;
