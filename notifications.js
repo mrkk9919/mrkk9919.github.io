@@ -24,6 +24,29 @@
     if (!general) loadTransactions();
   }
 
+  function displayRef(ref) {
+    return String(ref == null ? "" : ref).replace(/^(?:DEMO-|demo_)/i, "");
+  }
+
+  // 演示流水没有后端 External Txn Ref 时，按交易号生成稳定的 8 位十六进制参考号
+  function demoExternalRef(seed) {
+    var text = String(seed || "MB");
+    var h1 = 0x811c9dc5;
+    var h2 = 0x27220a95;
+    for (var i = 0; i < text.length; i++) {
+      var code = text.charCodeAt(i);
+      h1 = ((h1 ^ code) * 0x01000193) >>> 0;
+      h2 = ((h2 + code * 31) * 0x85ebca6b) >>> 0;
+    }
+    return (h1.toString(16).padStart(8, "0") + h2.toString(16).padStart(8, "0")).slice(0, 8);
+  }
+
+  function externalRefOf(item) {
+    var ref = displayRef(item.externalRef);
+    if (ref) return ref;
+    return item.ref ? demoExternalRef(item.ref) : "";
+  }
+
   function dateParts(value) {
     var date = new Date(Number(value) || Date.now());
     function pad(n) { return n < 10 ? "0" + n : String(n); }
@@ -85,8 +108,8 @@
       if (item.merchantId) addLine(card, "Merchant ID", item.merchantId);
       if (item.bank) addLine(card, "Receiver bank", item.bank);
       addLine(card, "Transaction time", date.time);
-      addLine(card, "Transaction code", item.ref || "");
-      addLine(card, "External Txn Ref", item.externalRef || "");
+      addLine(card, "Transaction code", displayRef(item.ref) || "");
+      addLine(card, "External Txn Ref", externalRefOf(item));
       addLine(card, "Description", item.note || (item.title || "").replace(/^Demo\s*·\s*/i, ""));
       transactionList.appendChild(card);
     });
@@ -170,7 +193,7 @@
       if (item.ref) {
         var refLine = document.createElement("p");
         var refStrong = document.createElement("strong");
-        refStrong.textContent = "Transaction code: " + item.ref;
+        refStrong.textContent = "Transaction code: " + (displayRef(item.ref) || "");
         refLine.appendChild(refStrong);
         card.appendChild(refLine);
       }
