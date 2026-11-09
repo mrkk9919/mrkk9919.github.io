@@ -596,7 +596,8 @@
     var bank = (info.bank && info.bank.name) || "Bakong member bank";
     var bankShort = (info.bank && info.bank.short) || "";
 
-    pfMerchant.textContent = info.merchant;
+    // 付款金额页顶部名称固定展示为账户持有人
+    pfMerchant.textContent = "SOKHA CHAN";
     pfConfirmMerchant.textContent = info.merchant;
     pfSuccessMerchant.textContent = info.merchant;
     var accountId = String(info.accountId || info.account || info.bakongAccountId || "");
