@@ -493,6 +493,19 @@ window.MB_KH_BANKS = [
     "logo": "./assets/banks/kh/phillip-bank-plc.png"
   },
   {
+    "id": "pipay",
+    "name": "PiPay",
+    "short": "PiPay",
+    "bic": "",
+    "aliases": [
+      "pipay",
+      "pi pay",
+      "pi-pay"
+    ],
+    "website": "https://pipay.com.kh/",
+    "logo": "./assets/banks/pipay.png"
+  },
+  {
     "id": "ppcbank-phnom-penh-commercial-bank",
     "name": "PPCBank (Phnom Penh Commercial Bank)",
     "short": "PPCBank",
