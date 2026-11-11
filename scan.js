@@ -603,20 +603,21 @@
     var bank = (info.bank && info.bank.name) || "Bakong member bank";
     var bankShort = (info.bank && info.bank.short) || "";
 
-    // 付款金额页顶部名称固定展示为账户持有人
-    pfMerchant.textContent = "SOKHA CHAN";
+    // 付款金额页顶部名称显示收款人名字
+    var recipientName = (info.recipient && info.recipient.fullName) || info.merchant || "";
+    pfMerchant.textContent = recipientName;
     var verified = info.recipient && info.recipient.exists
       ? " · Bakong verified" + (info.recipient.kycStatus ? " · " + info.recipient.kycStatus : "")
       : "";
-    pfConfirmMerchant.textContent = (info.recipient && info.recipient.fullName) || info.merchant;
-    pfSuccessMerchant.textContent = (info.recipient && info.recipient.fullName) || info.merchant;
+    pfConfirmMerchant.textContent = recipientName;
+    pfSuccessMerchant.textContent = recipientName;
     var accountId = String(info.accountId || info.account || info.bakongAccountId || "");
-    pfConfirmBank.textContent = recipientAccountText(info) + verified;
+    pfConfirmBank.textContent = recipientAccountText(info);
     var billAccount = String(info.merchantId || accountId || "");
     if (pfBillBank) {
       pfBillBank.textContent = billAccount
-        ? "Account: " + displayRecipientAccount(billAccount) + verified
-        : bank + verified;
+        ? "Account: " + displayRecipientAccount(billAccount)
+        : bank;
     }
     var markLogo = bankLogoSrc(info);
     paintMark(pfConfirmToMark, markLogo, bank);
@@ -625,6 +626,7 @@
     pfSuccessBankShort.textContent = bankShort || bank;
 
     pfCur.textContent = currency;
+    pfCur.setAttribute("data-cur", currency);
     var prefill = info.amount === null || info.amount === undefined || info.amount === "" ? "" : String(info.amount);
     if (prefill && currency === "KHR") prefill = String(Math.round(Number(prefill)));
     pfAmount.value = prefill;
@@ -817,6 +819,7 @@
         pfConfirmBtn.textContent = "Waiting for payment\u2026";
         setStatus("Waiting for the transfer to arrive. Success is shown only after Bakong confirms it.");
       }
+      pollAttempt = 0;
       pollPayment();
     }).catch(function (err) {
       state.paying = false;
@@ -826,9 +829,18 @@
     });
   }
 
+  /* Bakong 每个 token 每天只有 100 次查询额度 —— 轮询必须往回退，
+     不能每 2 秒打一次（那样 3 分钟就把一天的额度烧光，之后即使真的付了钱
+     也查不到，页面永远停在“等待到账”）。 */
+  var POLL_DELAYS = [4000, 6000, 10000, 15000, 20000, 30000];
+  var pollAttempt = 0;
+
   function pollPayment() {
     if (!state.payment) return;
     var id = state.payment.id;
+    var delay = POLL_DELAYS[Math.min(pollAttempt, POLL_DELAYS.length - 1)];
+    pollAttempt += 1;
+    if (state.payment.quota && state.payment.quota.exhausted) delay = Math.max(delay, 30000);
     state.pollTimer = setTimeout(function () {
       apiFetch("/payments/" + id).then(function (payment) {
         // 流程已关闭或已换成别的支付单时，丢掉这次响应
@@ -842,11 +854,24 @@
           setStatus("Bakong did not receive this payment before the QR expired. Nothing was charged.", "error");
           return;
         }
+        if (quotaExhausted(payment)) {
+          setStatus(
+            "Bakong verified the QR, but today's transaction-query quota is used up (" +
+              payment.quota.used + "/" + payment.quota.limit +
+              "). If you already paid, it will be confirmed after the quota resets (midnight Cambodia time). Nothing else was charged.",
+            "error"
+          );
+        }
         pollPayment();
       }).catch(function () {
         pollPayment();
       });
-    }, 2000);
+    }, delay);
+  }
+
+  function quotaExhausted(payment) {
+    if (!payment) return false;
+    return Boolean(payment.quotaExhausted || (payment.quota && payment.quota.exhausted));
   }
 
   function saveStaticDemoPayment(payment, note) {
@@ -1057,16 +1082,71 @@
     sizeAmountInput();
   });
 
+  /* ---------- currency toggle (USD / KHR) ---------- */
+  if (pfCur && pfCur.tagName === "BUTTON") {
+    pfCur.addEventListener("click", function () {
+      if (!state.current) return;
+      var oldCur = state.current.currency || "USD";
+      var newCur = oldCur === "KHR" ? "USD" : "KHR";
+      state.current.currency = newCur;
+      pfCur.textContent = newCur;
+      pfCur.setAttribute("data-cur", newCur);
+
+      // 金额按汇率转换
+      var val = readAmount();
+      if (val > 0) {
+        val = newCur === "KHR" ? Math.round(val * USD_KHR_RATE) : val / USD_KHR_RATE;
+        var decimals = amountDecimals(newCur);
+        pfAmount.value = decimals === 0 ? String(Math.round(val)) : (Math.round(val * 100) / 100).toFixed(decimals).replace(/\.?0+$/, "");
+      }
+      sizeAmountInput();
+      refreshAmountState();
+    });
+  }
+
   pfNext.addEventListener("click", goConfirm);
 
   pfConfirmBtn.addEventListener("click", function () {
-    // 支付单已建好时，这个按钮用来去 Bakong 授权
+    // 支付单已建好时，这个按钮用来去 Bakong 授权，并顺手查一次到账
     if (state.payment && state.payment.status === "pending") {
       if (state.payment.deeplink) openBakong();
+      confirmNow();
       return;
     }
     openOtp();
   });
+
+  /* 用户说“我已经付了”：手动确认一次。
+     服务端有 5 秒最小间隔 + 每日额度约束，所以点多了也不会把额度打光。 */
+  function confirmNow() {
+    if (!state.payment || state.confirming) return;
+    var id = state.payment.id;
+    state.confirming = true;
+    setStatus("Checking with Bakong whether the payment arrived\u2026");
+    apiFetch("/payments/" + id + "/verify", { method: "POST" }).then(function (payment) {
+      state.confirming = false;
+      if (!state.payment || state.payment.id !== id) return;
+      state.payment = payment;
+      if (payment.status === "paid") { showSuccess(payment); return; }
+      if (payment.status === "expired") {
+        setStatus("Bakong did not receive this payment before the QR expired. Nothing was charged.", "error");
+        return;
+      }
+      if (quotaExhausted(payment)) {
+        setStatus(
+          "Bakong verified the QR, but today's transaction-query quota is used up (" +
+            payment.quota.used + "/" + payment.quota.limit +
+            "). Your payment will be confirmed after the quota resets (midnight Cambodia time).",
+          "error"
+        );
+        return;
+      }
+      setStatus("Bakong has not received this payment yet. If you just paid, wait a few seconds and tap again.");
+    }).catch(function () {
+      state.confirming = false;
+      setStatus("Could not reach the payment service. Check your connection and try again.", "error");
+    });
+  }
 
   if (otpOverlay) {
     otpOverlay.addEventListener("click", function (event) {

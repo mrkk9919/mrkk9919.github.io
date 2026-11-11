@@ -407,6 +407,16 @@
   font-size: 17px; font-weight: 800; letter-spacing: 0.8px;
   color: #e8402a; text-transform: uppercase;
 }
+.bill-cur-toggle {
+  border: 2px solid #e8402a; border-radius: 8px; padding: 2px 12px;
+  background: rgba(232,64,42,.08); cursor: pointer; line-height: 1.4;
+  transition: background .15s, transform .1s;
+  -webkit-tap-highlight-color: transparent;
+}
+.bill-cur-toggle:active { transform: scale(.94); }
+.bill-cur-toggle[data-cur="KHR"] {
+  color: #1a8c3a; border-color: #1a8c3a; background: rgba(26,140,58,.08);
+}
 .bill-hr {
   height: 1px; margin: 8px 0 16px;
   background: linear-gradient(90deg, rgba(190, 202, 220, 0) 0%, #cdd7e5 22%, #cdd7e5 78%, rgba(190, 202, 220, 0) 100%);
