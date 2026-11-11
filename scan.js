@@ -842,7 +842,7 @@
     var id = state.payment.id;
     var delay = POLL_DELAYS[Math.min(pollAttempt, POLL_DELAYS.length - 1)];
     pollAttempt += 1;
-    if (state.payment.quota && state.payment.quota.exhausted) delay = Math.max(delay, 30000);
+    if (state.payment.settleMode !== "instant" && state.payment.quota && state.payment.quota.exhausted) delay = Math.max(delay, 30000);
     state.pollTimer = setTimeout(function () {
       apiFetch("/payments/" + id).then(function (payment) {
         // 流程已关闭或已换成别的支付单时，丢掉这次响应
@@ -873,6 +873,8 @@
 
   function quotaExhausted(payment) {
     if (!payment) return false;
+    // instant 结算根本不用查 Bakong，额度耗尽与它无关，不能因此中断支付流程
+    if (payment.settleMode === "instant") return false;
     return Boolean(payment.quotaExhausted || (payment.quota && payment.quota.exhausted));
   }
 

@@ -237,7 +237,10 @@ async function paymentStatus(id, body, forceCheck) {
     }
   }
 
-  return { status: 200, body: { ...publicPayment(store.getPayment(id)), checked: false, quota: bakong.info().quota } };
+  // instant 结算不依赖 Bakong 查询，所以绝不能把「额度用完」这个信息带给前端：
+  // 前端一旦看到 exhausted 就会停下快轮询并显示「查不到到账」，反而让页面永远等不到成功。
+  const tail = config.settleMode === "instant" ? {} : { quota: bakong.info().quota };
+  return { status: 200, body: { ...publicPayment(store.getPayment(id)), checked: false, ...tail } };
 }
 
 function publicPayment(p) {
