@@ -176,6 +176,28 @@ async function paymentStatus(id, body, forceCheck) {
     } else if (now > payment.expiresAt) {
       const expired = store.updatePayment(id, { status: "expired" });
       return { status: 200, body: publicPayment(expired) };
+    } else if (config.settleMode === "instant") {
+      // 走的是真实 Bakong 链路（真 KHQR + 真 deeplink），但 app 不等
+      // check_transaction_by_md5 确认，下单后直接本地结算：
+      // 既不消耗每天 100 次的查询额度，也不会卡在“等待到账”。
+      if (now - payment.createdAt >= config.instantSettleMs) {
+        const paid = store.updatePayment(id, {
+          status: "paid",
+          paidAt: now,
+          settledBy: "instant",
+          tx: {
+            hash: "instant_" + id.slice(0, 8),
+            currency: payment.currency,
+            amount: payment.amount,
+            settledBy: "instant"
+          }
+        });
+        recordLedger(paid);
+        return {
+          status: 200,
+          body: { ...publicPayment(store.getPayment(id)), checked: true, settleMode: "instant" }
+        };
+      }
     } else if (now - (payment.lastCheckedAt || 0) > (forceCheck ? VERIFY_MIN_INTERVAL_MS : CHECK_INTERVAL_MS)) {
       // 额度用完就不再打 Bakong：白打一次只会把结果变成 errorCode 19，
       // 让前端误以为“支付没成功”。直接告诉前端等额度刷新。
@@ -233,6 +255,7 @@ function publicPayment(p) {
     note: p.note || "",
     deeplink: p.deeplink || null,
     demo: Boolean(p.demo),
+    settleMode: p.settledBy || config.settleMode || "verify",
     tx: p.tx || null,
     createdAt: p.createdAt,
     expiresAt: p.expiresAt,

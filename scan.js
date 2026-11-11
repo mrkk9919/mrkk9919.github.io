@@ -814,7 +814,9 @@
       } else if (payment.deeplink) {
         pfConfirmBtn.disabled = false;
         pfConfirmBtn.textContent = "Open Bakong to pay";
-        setStatus("Tap the button to approve it in Bakong. This screen only completes when Bakong confirms the transfer \u2014 never simulated.");
+        setStatus(payment.settleMode === "instant"
+          ? "Tap the button to approve the payment in Bakong. This build settles the payment as soon as it is approved."
+          : "Tap the button to approve it in Bakong. This screen only completes when Bakong confirms the transfer \u2014 never simulated.");
       } else {
         pfConfirmBtn.textContent = "Waiting for payment\u2026";
         setStatus("Waiting for the transfer to arrive. Success is shown only after Bakong confirms it.");
@@ -832,7 +834,7 @@
   /* Bakong 每个 token 每天只有 100 次查询额度 —— 轮询必须往回退，
      不能每 2 秒打一次（那样 3 分钟就把一天的额度烧光，之后即使真的付了钱
      也查不到，页面永远停在“等待到账”）。 */
-  var POLL_DELAYS = [4000, 6000, 10000, 15000, 20000, 30000];
+  var POLL_DELAYS = [3000, 4000, 6000, 10000, 15000, 20000, 30000];
   var pollAttempt = 0;
 
   function pollPayment() {

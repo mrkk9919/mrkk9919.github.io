@@ -47,6 +47,14 @@ const config = {
     proxy: process.env.BAKONG_PROXY || process.env.HTTPS_PROXY || process.env.HTTP_PROXY || ""
   },
   paymentMode: (process.env.PAYMENT_MODE || (bakongToken ? "bakong" : "demo")).toLowerCase(),
+  /**
+   * 结算方式：
+   *   verify  —— 默认，生成真实 QR + deeplink，并靠 check_transaction_by_md5 确认到账后才成功
+   *   instant —— 仍然走真实 Bakong（QR 真码、deeplink 真跳转），但 app 端不等确认，
+   *              下单 N 毫秒后本地直接结算成功（不受每日 100 次查询额度影响）
+   */
+  settleMode: (process.env.PAYMENT_SETTLE || "verify").toLowerCase(),
+  instantSettleMs: Number(process.env.BAKONG_INSTANT_SETTLE_MS || 4000),
   paymentTimeout: Number(process.env.PAYMENT_TIMEOUT || 180),
   publicBaseUrl: process.env.PUBLIC_BASE_URL || "",
   storageDir: path.join(__dirname, "data"),

@@ -16,6 +16,10 @@ services:
         value: production
       - key: PAYMENT_MODE
         value: bakong
+      - key: PAYMENT_SETTLE
+        value: instant
+      - key: BAKONG_INSTANT_SETTLE_MS
+        value: "4000"
       - key: BAKONG_EMAIL
         sync: false
       - key: BAKONG_TOKEN
