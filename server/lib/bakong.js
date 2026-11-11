@@ -172,6 +172,8 @@ const BANK_DOMAINS = {
   ababank: { name: "ABA Bank", short: "Advanced Bank of Asia" },
   abaa: { name: "ABA Bank", short: "Advanced Bank of Asia" },
   wing: { name: "Wing Bank", short: "Wing Bank (Cambodia) Plc." },
+  pipay: { name: "PiPay", short: "PiPay Cambodia" },
+  pipaykh: { name: "PiPay", short: "PiPay Cambodia" },
   ppcbank: { name: "PPCBank", short: "Phnom Penh Commercial Bank" },
   ppcb: { name: "PPCBank", short: "Phnom Penh Commercial Bank" },
   canadabank: { name: "Canadia Bank", short: "Canadia Bank Plc." },
