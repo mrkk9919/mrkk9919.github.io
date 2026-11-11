@@ -144,7 +144,14 @@ function recordLedger(payment) {
   });
 }
 
-async function paymentStatus(id, body) {
+/**
+ * Bakong 每个 token 每天只有 100 次查询额度，所以轮询必须省着用：
+ * 自动轮询最少隔 CHECK_INTERVAL_MS，用户手动“立即检查”最少隔 VERIFY_MIN_INTERVAL_MS。
+ */
+const CHECK_INTERVAL_MS = Math.max(3000, Number(process.env.BAKONG_CHECK_INTERVAL_MS || 15000));
+const VERIFY_MIN_INTERVAL_MS = Math.max(2000, Number(process.env.BAKONG_VERIFY_MIN_INTERVAL_MS || 5000));
+
+async function paymentStatus(id, body, forceCheck) {
   let payment = store.getPayment(id);
   if (!payment) return { status: 404, body: { error: "支付单不存在" } };
 
@@ -169,23 +176,46 @@ async function paymentStatus(id, body) {
     } else if (now > payment.expiresAt) {
       const expired = store.updatePayment(id, { status: "expired" });
       return { status: 200, body: publicPayment(expired) };
-    } else if (now - (payment.lastCheckedAt || 0) > 2000) {
+    } else if (now - (payment.lastCheckedAt || 0) > (forceCheck ? VERIFY_MIN_INTERVAL_MS : CHECK_INTERVAL_MS)) {
+      // 额度用完就不再打 Bakong：白打一次只会把结果变成 errorCode 19，
+      // 让前端误以为“支付没成功”。直接告诉前端等额度刷新。
+      const budget = bakong.info().quota;
+      if (budget && budget.exhausted) {
+        return {
+          status: 200,
+          body: {
+            ...publicPayment(store.getPayment(id)),
+            checked: false,
+            quota: budget,
+            lastError: "Bakong 今日查询额度已用完（" + budget.used + "/" + budget.limit + "），额度刷新后会自动确认到账。"
+          }
+        };
+      }
       store.updatePayment(id, { lastCheckedAt: now });
       try {
         const result = await bakong.checkByMd5(payment.md5);
         if (result.paid) {
-          const paid = store.updatePayment(id, { status: "paid", paidAt: now, tx: result.tx });
+          const paid = store.updatePayment(id, { status: "paid", paidAt: now, tx: result.tx, lastError: null });
           recordLedger(paid);
-          return { status: 200, body: publicPayment(store.getPayment(id)) };
+          return { status: 200, body: { ...publicPayment(store.getPayment(id)), checked: true, quota: bakong.info().quota } };
         }
         store.updatePayment(id, { lastError: result.reason || null });
+        return {
+          status: 200,
+          body: {
+            ...publicPayment(store.getPayment(id)),
+            checked: true,
+            quota: bakong.info().quota,
+            quotaExhausted: Boolean(result.quotaExhausted)
+          }
+        };
       } catch (err) {
         store.updatePayment(id, { lastError: String(err.message || err) });
       }
     }
   }
 
-  return { status: 200, body: publicPayment(store.getPayment(id)) };
+  return { status: 200, body: { ...publicPayment(store.getPayment(id)), checked: false, quota: bakong.info().quota } };
 }
 
 function publicPayment(p) {
@@ -301,6 +331,13 @@ async function handleApi(req, res, pathname, query) {
   const paymentMatch = pathname.match(/^\/api\/payments\/([a-f0-9]{16,32})$/);
   if (req.method === "GET" && paymentMatch) {
     const r = await paymentStatus(paymentMatch[1]);
+    return send(res, r.status, r.body);
+  }
+
+  // 用户手动“我已完成支付 → 立即确认”：不消耗自动轮询的节奏，但同样受额度约束
+  const verifyMatch = pathname.match(/^\/api\/payments\/([a-f0-9]{16,32})\/verify$/);
+  if (req.method === "POST" && verifyMatch) {
+    const r = await paymentStatus(verifyMatch[1], null, true);
     return send(res, r.status, r.body);
   }
 

@@ -290,8 +290,25 @@ function round(n, currency) {
   return currency === "KHR" ? Math.round(n) : Math.round(n * 100) / 100;
 }
 
+/* ---------- Bakong 每日额度计数 ---------- */
+/* 记在状态里，Postgres 接入后重启不丢；见 lib/quota.js */
+
+function getQuota() {
+  const st = load();
+  return Object.assign({ day: "", used: 0, exhaustedAt: 0, errorCode: null, message: null }, st.quota || {});
+}
+
+function setQuota(next) {
+  const st = load();
+  st.quota = Object.assign(getQuota(), next || {});
+  persist();
+  return st.quota;
+}
+
 module.exports = {
   init,
+  getQuota,
+  setQuota,
   storageMode,
   load,
   persist,

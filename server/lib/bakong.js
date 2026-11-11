@@ -2,6 +2,7 @@
 
 const crypto = require("crypto");
 const config = require("../config");
+const quota = require("./quota");
 const { BakongKHQR, khqrData, MerchantInfo, IndividualInfo } = require("bakong-khqr");
 
 let token = config.bakong.token;
@@ -80,19 +81,19 @@ async function renewToken() {
  * responseCode === 0 且 data 非空 => 已支付；其余一律视为未支付。
  */
 async function checkByMd5(hash) {
-  const r = await authed("/v1/check_transaction_by_md5", { md5: hash });
+  const r = await quotaCall("/v1/check_transaction_by_md5", { md5: hash });
   return transactionResult(r);
 }
 
 /** 用完整交易 hash 查询（Bakong 文档 6） */
 async function checkByHash(hash) {
-  const r = await authed("/v1/check_transaction_by_hash", { hash: hash });
+  const r = await quotaCall("/v1/check_transaction_by_hash", { hash: hash });
   return transactionResult(r);
 }
 
 /** 用 8 位短 hash + 金额币种查询（Bakong 文档 7） */
 async function checkByShortHash(hash, amount, currency) {
-  const r = await authed("/v1/check_transaction_by_short_hash", {
+  const r = await quotaCall("/v1/check_transaction_by_short_hash", {
     hash: hash,
     amount: Number(amount),
     currency: String(currency || "USD").toUpperCase()
@@ -128,7 +129,42 @@ async function authed(pathname, body) {
   return r;
 }
 
+/**
+ * 额度受限接口（generate_deeplink_by_qr / check_transaction_*）。
+ *
+ * Bakong 每个 source 每天只有 100 次；先扣本地预算再打，预算用完就直接返回
+ * 一个“额度已用完”的伪响应，不再打 Bakong，也绝不把它当成“未支付”以外的
+ * 结论。Bakong 真回了 errorCode 19 就把当天标记为耗尽，避免继续撞墙。
+ */
+async function quotaCall(pathname, body) {
+  const budget = quota.snapshot();
+  if (budget.exhausted) {
+    return {
+      status: 429,
+      skipped: true,
+      json: {
+        responseCode: 429,
+        responseMessage:
+          "Local Bakong query budget for today is used up (" +
+          budget.used + "/" + budget.limit +
+          "). Resets after midnight Cambodia time.",
+        errorCode: 19,
+        data: null
+      },
+      text: ""
+    };
+  }
+  quota.spend(1);
+  const r = await authed(pathname, body);
+  if (r.json && Number(r.json.errorCode) === 19) {
+    quota.exhaust(r.json.responseMessage, 19);
+  }
+  return r;
+}
+
 function transactionResult(r) {
+  const errorCode = r.json ? r.json.errorCode : null;
+  const quotaExhausted = Number(errorCode) === 19 || Boolean(r.skipped);
   if (r.json && r.json.responseCode === 0 && r.json.data && Object.keys(r.json.data).length) {
     return { found: true, paid: true, tx: r.json.data, httpStatus: r.status };
   }
@@ -136,8 +172,12 @@ function transactionResult(r) {
     found: false,
     paid: false,
     httpStatus: r.status,
-    errorCode: r.json ? r.json.errorCode : null,
-    reason: (r.json && r.json.responseMessage) || "HTTP " + r.status
+    errorCode,
+    quotaExhausted,
+    reason: quotaExhausted
+      ? "Bakong 今日查询额度已用完（每个 token 每天 100 次）。到账确认要等额度刷新后再查。"
+      : (r.json && r.json.responseMessage) || "HTTP " + r.status,
+    message: (r.json && r.json.responseMessage) || null
   };
 }
 
@@ -320,6 +360,7 @@ function info() {
     emailConfigured: Boolean(config.bakong.email),
     qrReady: config.qrReady,
     ready: Boolean(token && config.qrReady),
+    quota: quota.snapshot(),
     apis: [
       "request_token",
       "verify",
