@@ -248,7 +248,12 @@ async function checkQrStatus(hash, body) {
 
 async function handleApi(req, res, pathname, query) {
   if (req.method === "GET" && pathname === "/api/health") {
-    return send(res, 200, { ok: true, bakong: bakong.info(), time: Date.now() });
+    return send(res, 200, {
+      ok: true,
+      bakong: bakong.info(),
+      storage: store.storageMode(),
+      time: Date.now()
+    });
   }
 
   if (req.method === "POST" && pathname === "/api/payments/create") {
@@ -506,10 +511,20 @@ const server = http.createServer((req, res) => {
   serveStatic(req, res, pathname);
 });
 
-server.listen(config.port, "0.0.0.0", () => {
-  console.log("[mb-cambodia] API + static on http://0.0.0.0:" + config.port + config.sitePrefix);
-  console.log("[mb-cambodia] Bakong:", config.bakong.env, config.bakong.baseUrl, "| mode:", config.paymentMode);
-  if (!config.bakongReady) {
-    console.warn("[mb-cambodia] 警告：BAKONG_* 未配置完整，/api/payments 将无法校验真实交易");
-  }
+async function boot() {
+  const storage = await store.init();
+
+  server.listen(config.port, "0.0.0.0", () => {
+    console.log("[mb-cambodia] API + static on http://0.0.0.0:" + config.port + config.sitePrefix);
+    console.log("[mb-cambodia] Bakong:", config.bakong.env, config.bakong.baseUrl, "| mode:", config.paymentMode);
+    console.log("[mb-cambodia] 存储:", storage.mode + (storage.seeded ? "（已用现有数据初始化）" : ""));
+    if (!config.bakongReady) {
+      console.warn("[mb-cambodia] 警告：BAKONG_* 未配置完整，/api/payments 将无法校验真实交易");
+    }
+  });
+}
+
+boot().catch((err) => {
+  console.error("[mb-cambodia] 启动失败:", err);
+  process.exit(1);
 });

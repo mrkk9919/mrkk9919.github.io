@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const config = require("../config");
+const db = require("./db");
 
 const FILE = path.join(config.storageDir, "state.json");
 
@@ -17,31 +18,64 @@ const SEED = {
 };
 
 let state = null;
+let dbMode = false;
 
 function ensureDir() {
   if (!fs.existsSync(config.storageDir)) fs.mkdirSync(config.storageDir, { recursive: true });
 }
 
+function normalize(st) {
+  if (!st.accounts) st.accounts = JSON.parse(JSON.stringify(SEED.accounts));
+  if (!st.payments) st.payments = {};
+  if (!st.transfers) st.transfers = [];
+  return st;
+}
+
+// 读文件状态；文件不存在或损坏时返回 null（损坏文件保留改名，避免静默丢数据）
+function readFileState() {
+  ensureDir();
+  if (!fs.existsSync(FILE)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(FILE, "utf8"));
+  } catch (err) {
+    fs.renameSync(FILE, FILE + ".corrupt-" + Date.now());
+    return null;
+  }
+}
+
+/**
+ * 启动时决定存储后端：优先 Postgres（DATABASE_URL），否则退回 JSON 文件。
+ * 库里还没有数据时，用现有文件状态（或初始种子）灌一次，保证界面数据不变。
+ */
+async function init() {
+  const conn = await db.init();
+  if (!conn.ok) {
+    if (db.enabled()) console.warn("[store] Postgres 不可用，改用文件存储:", conn.reason);
+    dbMode = false;
+    if (!state) state = normalize(readFileState() || JSON.parse(JSON.stringify(SEED)));
+    return { mode: db.status(), seeded: false };
+  }
+
+  dbMode = true;
+  const remote = await db.loadState();
+  if (remote && typeof remote === "object") {
+    state = normalize(remote);
+    return { mode: "postgres", seeded: false };
+  }
+
+  state = normalize(readFileState() || JSON.parse(JSON.stringify(SEED)));
+  await db.saveState(state);
+  return { mode: "postgres", seeded: true };
+}
+
+function storageMode() {
+  return db.status();
+}
+
 function load() {
   if (state) return state;
-  ensureDir();
-  if (fs.existsSync(FILE)) {
-    try {
-      state = JSON.parse(fs.readFileSync(FILE, "utf8"));
-    } catch (err) {
-      // 损坏时保留坏文件，避免静默丢数据
-      const bad = FILE + ".corrupt-" + Date.now();
-      fs.renameSync(FILE, bad);
-      state = null;
-    }
-  }
-  if (!state) {
-    state = JSON.parse(JSON.stringify(SEED));
-    persist();
-  }
-  if (!state.accounts) state.accounts = JSON.parse(JSON.stringify(SEED.accounts));
-  if (!state.payments) state.payments = {};
-  if (!state.transfers) state.transfers = [];
+  state = normalize(readFileState() || JSON.parse(JSON.stringify(SEED)));
+  persist();
   return state;
 }
 
@@ -50,6 +84,9 @@ function persist() {
   const tmp = path.join(config.storageDir, ".state." + process.pid + ".tmp");
   fs.writeFileSync(tmp, JSON.stringify(state, null, 2));
   fs.renameSync(tmp, FILE); // 原子替换，避免半截文件
+  if (dbMode) {
+    db.saveState(state).catch((err) => console.error("[store] 写入 Postgres 失败:", err.message));
+  }
 }
 
 function newRef(prefix) {
@@ -254,6 +291,8 @@ function round(n, currency) {
 }
 
 module.exports = {
+  init,
+  storageMode,
   load,
   persist,
   newRef,
